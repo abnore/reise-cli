@@ -29,6 +29,7 @@ Dependencies:
 
 import requests, json, os
 import sys, datetime
+import unicodedata
 from rich.table import Table
 from rich.console import Console
 from rich.prompt import Prompt
@@ -92,21 +93,35 @@ def format_time(t):
     dt = datetime.datetime.fromisoformat(t.replace("Z","+00:00"))
     return dt.strftime("%H:%M:%S")
 
+def normalize(s):
+    s = s.lower().strip()
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    s = s.replace("-", "").replace(" ", "")
+    return s
+
 def show_info(name):
-    entry = known_stops.get(name)
-    if not entry:
+    norm = normalize(name)
+
+    # Find real key behind normalized match
+    matches = [k for k in known_stops if normalize(k) == norm]
+
+    if not matches:
         console.print(f"[red]'{name}' not found in cache[/red]")
         return
 
+    real_key = matches[0]
+    entry = known_stops[real_key]
+
     table = Table(
-            title=f"[bold magenta]Info for \"{name}\"[/bold magenta]",
-            box=box.DOUBLE,
-            )
+        title=f"[bold magenta]Info for \"{real_key}\"[/bold magenta]",
+        box=box.DOUBLE,
+    )
     table.add_column("Field", style="cyan", no_wrap=True)
     table.add_column("Value", style="white")
 
     def row(key, value):
-        if value:
+        if value is not None:
             table.add_row(key, str(value))
 
     row("Stop ID", entry.get("id"))
@@ -207,14 +222,22 @@ def main(args):
             if len(args) < 2:
                 console.print("[red]Usage: --delete <stop name>[/red]")
                 return
-            key = " ".join(args[1:])
-            if key in known_stops:
-                del known_stops[key]
-                with open(CACHE, "w") as f:
-                    json.dump(known_stops, f, indent=2)
-                console.print(f"[green]Deleted '{key}' from cache[/green]")
-            else:
-                console.print(f"[yellow]'{key}' not found in cache[/yellow]")
+
+            target = " ".join(args[1:])
+            norm = normalize(target)
+            matches = [k for k in known_stops if normalize(k) == norm]
+
+            if not matches:
+                console.print(f"[yellow]'{target}' not found in cache[/yellow]")
+                return
+
+            real_key = matches[0]
+            del known_stops[real_key]
+
+            with open(CACHE, "w") as f:
+                json.dump(known_stops, f, indent=2)
+
+            console.print(f"[green]Deleted '{real_key}' from cache[/green]")
             return
 
         elif first == "--info":
@@ -229,9 +252,45 @@ def main(args):
             if len(args) < 3:
                 console.print("[red]Usage: --rename <old name> <new name>[/red]")
                 return
-            old = args[1]
-            new = " ".join(args[2:])
-            rename_entry(old, new)
+
+            # Drop flag
+            parts = args[1:]
+
+            # Try to find the longest prefix match in known_stops
+            split_index = None
+            old = None
+
+            for i in range(1, len(parts)+1):
+                candidate = " ".join(parts[:i])
+                norm_candidate = normalize(candidate)
+
+                for k in known_stops:
+                    if normalize(k) == norm_candidate:
+                        old = k
+                        split_index = i
+                        break
+
+            if old is None:
+                console.print(f"[red]No matching cached stop found in rename input[/red]")
+                console.print("[yellow]Try quoting names with spaces, e.g.[/yellow]")
+                console.print('  reise --rename "nedre bekkelaget" nb')
+                return
+
+            new = " ".join(parts[split_index:]).strip()
+
+            if not new:
+                console.print("[red]New name missing after old name[/red]")
+                return
+
+            if new in known_stops:
+                console.print(f"[yellow]'{new}' already exists in cache[/yellow]")
+                return
+
+            known_stops[new] = known_stops.pop(old)
+            with open(CACHE, "w") as f:
+                json.dump(known_stops, f, indent=2)
+
+            console.print(f"[green]Renamed '{old}' -> '{new}'[/green]")
             return
 
         if first == "--version":
@@ -245,8 +304,13 @@ def main(args):
 
     # else treat all args as stop name (multi-word ok as entur API accepts it)
     name = " ".join(args)
+    norm = normalize(name)
+    matches = [k for k in known_stops if normalize(k) == norm]
 
-    if name not in known_stops:
+    if matches:
+        real_key = matches[0]
+        name = real_key
+    else:
         places = find_places(name, HEADERS)
         stops  = [p for p in places if p["is_stop"]]
 
