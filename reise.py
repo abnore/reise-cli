@@ -38,7 +38,10 @@ from find import find_places
 
 __version__ = "0.1.0"
 
-CACHE = "stops.json"
+SCRIPT_PATH = os.path.realpath(__file__)
+SCRIPT_DIR  = os.path.dirname(SCRIPT_PATH)
+CACHE = os.path.join(SCRIPT_DIR, "stops.json")
+
 URL  = "https://api.entur.io/journey-planner/v3/graphql"
 HEADERS = { "ET-Client-Name": "reise-cli" }
 # Same colors of the icons for ruter
@@ -49,11 +52,13 @@ MODE_COLORS = {
         }
 
 known_stops = {}
+try:
+    with open(CACHE) as f:
+        known_stops.update(json.load(f))
+except (json.JSONDecodeError, FileNotFoundError):
+    pass
+
 console = Console()
-
-if os.path.exists(CACHE):
-    known_stops.update(json.load(open(CACHE)))
-
 
 # Graphql query, limited to next hour and 20 results - Here we can ask
 # for whatever we need
@@ -92,9 +97,6 @@ def show_info(name):
     if not entry:
         console.print(f"[red]'{name}' not found in cache[/red]")
         return
-
-    if isinstance(entry, str):
-        entry = {"id": entry}
 
     table = Table(
             title=f"[bold magenta]Info for \"{name}\"[/bold magenta]",
@@ -181,7 +183,8 @@ def main(args):
                 return
 
             table = Table(
-                    title="[bold underline magenta]Saved stops[/bold underline magenta]",
+                    title="[bold underline magenta]Saved stops\
+                           [/bold underline magenta]",
                     box=box.DOUBLE,
                     )
             table.add_column("#", justify="right")
@@ -258,7 +261,8 @@ def main(args):
             chosen = stops[0]
         else:
             table = Table(
-               title=f"[bold underline magenta]Multiple stops match \"{name}\" [/bold underline magenta]",
+               title=f"[bold underline magenta]Multiple stops match \"{name}\" \
+                       [/bold underline magenta]",
                box=box.DOUBLE,
                )
             table.add_column("#", justify="right")
@@ -286,7 +290,7 @@ def main(args):
         known_stops[name] = chosen
         console.print(f"[green]Saved {name} -> {chosen['id']}[/green]")
 
-        # Cache 
+        # Cache
         with open(CACHE, "w") as f:
             json.dump(known_stops, f, indent=2)
 
