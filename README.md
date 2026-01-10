@@ -5,7 +5,7 @@
 searches for public transports and departure times from any place you want.
 
 Will find any place, stop or not, and give you a choice when searching.
-Caches the places in `stops.json` with all the information you would need.
+Caches the places in `<repo>/stops.json` with all the information you would need.
 The tool allows you to filter out modes of travel, be it bus or tram, and only 
 display those. 
 
@@ -76,63 +76,23 @@ This will install globally which made more sense for me, not having to be
 in a virtual environment
 
 ## Usage
-
+If symlinked or installed then usage is simple:
 ```
 reise <stop name> [mode]
 ```
 
 ### Examples
 
-Search for a stop (first time prompts selection, then cached):
-```sh
-reise jernbanetorget
 ```
-Rename:
-```sh
-reise --rename jernbanetorget jb
-```
-If renaming a place with multiple words, make sure to include ""
+reise <stop>           show departures
+reise <stop> -bus      buses only
+reise <stop> -metro    metro only
+reise <stop> -tram     trams only
 
-```sh
-reise --rename "nedre bekkelaget" nb
-```
-
-Only show buses:
-```sh
-reise jb -bus
-```
-
-Metro-only:
-```sh
-reise oslo s -metro
-```
-
-Trams-only:
-```sh
-reise bjørvika -tram
-```
-
-List cached stops:
-```sh
-reise --list
-```
-
-Show info:
-```sh
-reise --info bjørvika
-```
-
-Delete:
-```sh
-reise --delete majorstuen
-```
-
-Clear cache completely:
-```sh
-reise --clear-cache
-```
-
-Show version:
-```sh
-reise --version
+reise --list           show cached
+reise --info <name>    stop info
+reise --rename a b     rename
+reise --delete <name>  remove from cache
+reise --clear-cache    reset cache
+reise --version        print version
 ```
