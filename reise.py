@@ -31,6 +31,7 @@ import requests, json, os
 import sys, datetime
 from rich.table import Table
 from rich.console import Console
+from rich.prompt import Prompt
 from rich import box
 
 from find import find_places
@@ -134,7 +135,7 @@ USAGE = """reise — tiny CLI for public transport (Using Entur API)
 
 usage: reise [--options] [<stop name>] [-mode]
 
-(hint: if not symlinked or installed in $PATH, 
+(hint: if not symlinked or installed in $PATH,
        use ./reise.py
        Or if not chmod +x then python3 reise.py is fine)
 
@@ -180,7 +181,7 @@ def main(args):
                 return
 
             table = Table(
-                    title="[bold magenta]Saved stops[/bold magenta]",
+                    title="[bold underline magenta]Saved stops[/bold underline magenta]",
                     box=box.DOUBLE,
                     )
             table.add_column("#", justify="right")
@@ -256,9 +257,8 @@ def main(args):
         if len(stops) == 1:
             chosen = stops[0]
         else:
-            from rich.prompt import Prompt
             table = Table(
-               title=f"[bold magenta]Multiple stops match \"{name}\"[/bold magenta]",
+               title=f"[bold underline magenta]Multiple stops match \"{name}\" [/bold underline magenta]",
                box=box.DOUBLE,
                )
             table.add_column("#", justify="right")
@@ -270,12 +270,23 @@ def main(args):
                 table.add_row(str(i), s["name"], s["county"], s["label"])
             console.print(table)
 
-            idx = int(Prompt.ask("Pick a stop",
-                choices=[str(i) for i in range(len(stops))]))
+            choices_enum = [str(i) for i in range(len(stops))]
+            choices_enum.append("q")
+
+            answer = Prompt.ask("Pick a stop (or q to quit)",
+                                choices=choices_enum)
+
+            if answer == "q":
+                return
+
+            idx = int(answer)
             chosen = stops[idx]
 
+        name = chosen['name'].lower()
         known_stops[name] = chosen
         console.print(f"[green]Saved {name} -> {chosen['id']}[/green]")
+
+        # Cache 
         with open(CACHE, "w") as f:
             json.dump(known_stops, f, indent=2)
 
