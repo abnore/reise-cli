@@ -1,4 +1,5 @@
 # reise-cli v0.1.0
+<img src="images/reise_jb.png" width="500">
 
 `reise` is Norwegian for `journey` or `travel`. This small command-line tool
 searches for public transports and departure times from any place you want.
