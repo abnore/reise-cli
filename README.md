@@ -1,4 +1,4 @@
-# reise-cli v0.2.0
+# reise-cli v0.1.1
 <img src="images/reise_jb.png" width="500">
 
 `reise` is Norwegian for `journey` or `travel`. This small command-line tool
