@@ -1,0 +1,22 @@
+0.1.2 (2026.12.01)  Fix: exact name cache lookup now auto-uses cached stop, unless -R
+                    Fix: selection by index gets auto used, no checks
+                    Fix: full place list always shown before selecting stop
+                    Fix: never auto-prompt when the name is ambiguous across multiple keys
+                    Change: moved lookup logic away from _resolve_key into explicit match
+                    Change: cleaned lookup_and_display flow and removed redundant checks
+                    Fix: support for planes with color and naming
+                    Fix: referencing of stops by index in list
+                    Added support for multiple info/deletions at once, also by index
+                    Added support for better help text with hints and usage message
+                    Fix: json can now be empty
+                    Fix: downgraded version number
+                    Fix: showing all results, not only stops, when searching.
+                    Fix: broke up function `lookup_and_display` into smaller methods
+
+0.1.1 (2026.10.01)  Introduces argparse for proper CLI flags and help text
+                    Added ferry and train as well as submodes (colors)
+                    Broke out code into functions, preparing for modularization
+                    Added multi-flag filtering (-bmtrf etc.)
+
+0.1.0 (2026.10.01)  Basic functionality, geocoder and journey-planner API
+                    Simple tables with rich, having color coded output
